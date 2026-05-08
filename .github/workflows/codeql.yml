@@ -24,7 +24,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [python, javascript-typescript, go]
+        # javascript-typescript is added in Phase 5 when webapp/front/ ships real code.
+        # CodeQL aborts when no source files exist; do not enable until then.
+        language: [python, go]
     steps:
       - uses: actions/checkout@v5
       - uses: github/codeql-action/init@v3
