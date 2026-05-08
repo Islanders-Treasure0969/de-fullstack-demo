@@ -19,7 +19,7 @@ services:
   # LocalStack — AWS API emulation (S3, Glue, IAM, Secrets, etc.)
   # ----------------------------------------------------------------
   localstack:
-    image: localstack/localstack:4.0
+    image: localstack/localstack:4.0@sha256:17c2f79ca4e1f804eb912291a19713d4134806325ef0d21d4c1053161dfa72d0
     ports:
       - "4566:4566"
     environment:
@@ -40,7 +40,7 @@ services:
   # Garage — S3-compatible object store (replaces dead MinIO)
   # ----------------------------------------------------------------
   garage:
-    image: dxflrs/garage:v1.0.1
+    image: dxflrs/garage:v1.0.1@sha256:a5706cf1f3d7b349ac5133ec59ad8181b709270b75e5f2fa7b3e1a5c07d67137
     ports:
       - "3900:3900"  # S3 API
       - "3903:3903"  # admin API
@@ -59,7 +59,7 @@ services:
   # Lakekeeper — Iceberg REST catalog (Apache 2.0, Rust)
   # ----------------------------------------------------------------
   lakekeeper-db:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609
     environment:
       POSTGRES_USER: lakekeeper
       POSTGRES_PASSWORD: lakekeeper
@@ -74,7 +74,7 @@ services:
       retries: 10
 
   lakekeeper:
-    image: quay.io/lakekeeper/catalog:v0.7.0
+    image: quay.io/lakekeeper/catalog:v0.7.0@sha256:a719e54ee0b295c37ba5f11facfde42ec2b1c8099e4a19e60dc9988a07b7d938
     depends_on:
       lakekeeper-db:
         condition: service_healthy
@@ -97,7 +97,7 @@ services:
   # Postgres — operational mart (reverse-ETL target, app DB)
   # ----------------------------------------------------------------
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609
     ports:
       - "5432:5432"
     environment:
@@ -117,7 +117,7 @@ services:
   # Temporal — orchestration
   # ----------------------------------------------------------------
   temporal-db:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609
     environment:
       POSTGRES_USER: temporal
       POSTGRES_PASSWORD: temporal
@@ -132,7 +132,7 @@ services:
       retries: 10
 
   temporal:
-    image: temporalio/auto-setup:1.25
+    image: temporalio/auto-setup:1.25@sha256:b1edc1e20002d958c8182f2ae08dee877a125083683a627a44917683419ba6a8
     depends_on:
       temporal-db:
         condition: service_healthy
@@ -152,7 +152,7 @@ services:
       retries: 10
 
   temporal-ui:
-    image: temporalio/ui:2.31.2
+    image: temporalio/ui:2.31.2@sha256:28bb3ea5a6ea3e09f16b521f32ab727c96470f7f1e420c66a6cbfb02001a8aa2
     depends_on:
       temporal:
         condition: service_started
