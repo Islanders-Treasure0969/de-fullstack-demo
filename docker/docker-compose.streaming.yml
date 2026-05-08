@@ -26,7 +26,7 @@ services:
       retries: 10
 
   apicurio:
-    image: apicurio/apicurio-registry:3.0.4
+    image: apicurio/apicurio-registry:3.0.4@sha256:5a500b2b77cffb39911ed24c8c2f99059f0163a0b5d0a5659d3c1395a5ba031e
     depends_on:
       kafka:
         condition: service_healthy
@@ -39,7 +39,7 @@ services:
     networks: [de-lab]
 
   kafka-ui:
-    image: provectuslabs/kafka-ui:v0.7.2
+    image: provectuslabs/kafka-ui:v0.7.2@sha256:8f2ff02d64b0a7a2b71b6b3b3148b85f66d00ec20ad40c30bdcd415d46d31818
     depends_on:
       kafka:
         condition: service_healthy
