@@ -1,0 +1,42 @@
+name: sbom
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 5 * * *"  # nightly 05:00 UTC
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # to upload SBOM as release asset
+  id-token: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+          upload-artifact: true
+
+      - name: Generate SBOM (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-artifact: true
+
+      - name: Attach SBOMs to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            sbom.cdx.json
+            sbom.spdx.json

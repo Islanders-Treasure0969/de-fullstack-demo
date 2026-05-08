@@ -1,0 +1,164 @@
+# Phase 0 platform stack — minimum services to bring up the local data plane.
+# Add streaming services via docker-compose.streaming.yml.
+
+name: de-lab
+
+networks:
+  de-lab:
+    driver: bridge
+
+volumes:
+  garage-meta:
+  garage-data:
+  postgres-data:
+  lakekeeper-pg-data:
+  temporal-pg-data:
+
+services:
+  # ----------------------------------------------------------------
+  # LocalStack — AWS API emulation (S3, Glue, IAM, Secrets, etc.)
+  # ----------------------------------------------------------------
+  localstack:
+    image: localstack/localstack:4.0
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3,iam,glue,secretsmanager,sts,kms
+      AWS_DEFAULT_REGION: ap-northeast-1
+      DEBUG: "0"
+      PERSISTENCE: "1"
+    volumes:
+      - "./data/localstack:/var/lib/localstack"
+    networks: [de-lab]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/health | grep -q running"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------------------------------
+  # Garage — S3-compatible object store (replaces dead MinIO)
+  # ----------------------------------------------------------------
+  garage:
+    image: dxflrs/garage:v1.0.1
+    ports:
+      - "3900:3900"  # S3 API
+      - "3903:3903"  # admin API
+    volumes:
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+      - "./garage/garage.toml:/etc/garage.toml:ro"
+    networks: [de-lab]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3903/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------------------------------
+  # Lakekeeper — Iceberg REST catalog (Apache 2.0, Rust)
+  # ----------------------------------------------------------------
+  lakekeeper-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: lakekeeper
+      POSTGRES_PASSWORD: lakekeeper
+      POSTGRES_DB: lakekeeper
+    volumes:
+      - lakekeeper-pg-data:/var/lib/postgresql/data
+    networks: [de-lab]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lakekeeper"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  lakekeeper:
+    image: quay.io/lakekeeper/catalog:v0.7.0
+    depends_on:
+      lakekeeper-db:
+        condition: service_healthy
+    ports:
+      - "8181:8181"
+    environment:
+      LAKEKEEPER__PG_DATABASE_URL_READ: "postgres://lakekeeper:lakekeeper@lakekeeper-db:5432/lakekeeper"
+      LAKEKEEPER__PG_DATABASE_URL_WRITE: "postgres://lakekeeper:lakekeeper@lakekeeper-db:5432/lakekeeper"
+      LAKEKEEPER__BASE_URI: "http://localhost:8181"
+      RUST_LOG: info
+    command: ["serve"]
+    networks: [de-lab]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8181/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  # ----------------------------------------------------------------
+  # Postgres — operational mart (reverse-ETL target, app DB)
+  # ----------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-de_lab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-de_lab_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-de_lab}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [de-lab]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-de_lab}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------------------------------
+  # Temporal — orchestration
+  # ----------------------------------------------------------------
+  temporal-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    volumes:
+      - temporal-pg-data:/var/lib/postgresql/data
+    networks: [de-lab]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  temporal:
+    image: temporalio/auto-setup:1.25
+    depends_on:
+      temporal-db:
+        condition: service_healthy
+    ports:
+      - "7233:7233"
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-db
+    networks: [de-lab]
+    healthcheck:
+      test: ["CMD-SHELL", "tctl --address temporal:7233 cluster health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  temporal-ui:
+    image: temporalio/ui:2.31.2
+    depends_on:
+      temporal:
+        condition: service_started
+    ports:
+      - "8233:8080"
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: "http://localhost:3000"
+    networks: [de-lab]

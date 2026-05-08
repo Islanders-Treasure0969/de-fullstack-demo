@@ -1,0 +1,26 @@
+# Enable native GitHub auto-merge for Renovate PRs that match the policy.
+# Renovate already sets `automerge: true` on safe PRs, but this workflow
+# is a backstop in case auto-merge needs to be re-enabled.
+
+name: auto-merge
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable:
+    if: github.actor == 'renovate[bot]' || github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge for non-major
+        if: "!contains(github.event.pull_request.labels.*.name, 'major-update')"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr merge --auto --squash "$PR_URL" || true

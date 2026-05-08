@@ -1,0 +1,16 @@
+[project]
+name = "de-lab-dashboard"
+version = "0.1.0"
+description = "Streamlit dashboard for de-fullstack-demo"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "streamlit>=1.40",
+  "duckdb>=1.1",
+  "pandas>=2.2",
+  "altair>=5.4",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

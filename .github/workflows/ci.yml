@@ -1,0 +1,153 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.filter.outputs.python }}
+      go: ${{ steps.filter.outputs.go }}
+      rust: ${{ steps.filter.outputs.rust }}
+      web: ${{ steps.filter.outputs.web }}
+      tofu: ${{ steps.filter.outputs.tofu }}
+      dbt: ${{ steps.filter.outputs.dbt }}
+      compose: ${{ steps.filter.outputs.compose }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            python:
+              - 'dashboard/**'
+              - 'webapp/api/**'
+              - 'ingestion/**/*.py'
+              - 'pyproject.toml'
+              - '**/requirements*.txt'
+            go:
+              - 'ingestion/go/**'
+              - 'orchestration/**/*.go'
+              - '**/go.mod'
+            rust:
+              - 'ingestion/rust/**'
+              - '**/Cargo.toml'
+            web:
+              - 'webapp/front/**'
+              - '**/package.json'
+            tofu:
+              - 'infra/**'
+            dbt:
+              - 'transform/**'
+            compose:
+              - 'docker/**'
+
+  python:
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        run: pip install ruff==0.8.4
+      - run: ruff check .
+      - run: ruff format --check .
+
+  go:
+    needs: changes
+    if: needs.changes.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.22"
+      - run: gofmt -l . | tee /tmp/gofmt.out && test ! -s /tmp/gofmt.out
+
+  rust:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+
+  tofu:
+    needs: changes
+    if: needs.changes.outputs.tofu == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: "1.8.5"
+      - name: tofu fmt check
+        run: tofu fmt -check -recursive infra/
+
+  dbt:
+    needs: changes
+    if: needs.changes.outputs.dbt == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: dbt parse
+        working-directory: transform
+        run: |
+          pip install dbt-core dbt-duckdb
+          dbt deps || true
+          dbt parse || true   # tolerate during skeleton phase
+
+  compose:
+    needs: changes
+    if: needs.changes.outputs.compose == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: docker compose config
+        working-directory: docker
+        run: docker compose config --quiet
+
+  ci-success:
+    name: ci
+    needs: [changes, python, go, rust, web, tofu, dbt, compose]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all jobs passed
+        run: |
+          for r in '${{ needs.python.result }}' '${{ needs.go.result }}' '${{ needs.rust.result }}' '${{ needs.web.result }}' '${{ needs.tofu.result }}' '${{ needs.dbt.result }}' '${{ needs.compose.result }}'; do
+            if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
+              echo "Job result: $r — failing"
+              exit 1
+            fi
+          done
+          echo "All required jobs passed or were skipped."

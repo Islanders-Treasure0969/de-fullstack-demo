@@ -1,0 +1,13 @@
+# CODEOWNERS — required reviewers for each path.
+# https://docs.github.com/en/repositories/managing-your-repositories-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+*                           @Islanders-Treasure0969
+
+# Critical paths require explicit review (no Renovate auto-merge bypass)
+/.github/workflows/         @Islanders-Treasure0969
+/.github/renovate.json      @Islanders-Treasure0969
+/infra/live/_bootstrap/     @Islanders-Treasure0969
+/infra/live/prod/           @Islanders-Treasure0969
+/SECURITY.md                @Islanders-Treasure0969
+/LICENSE                    @Islanders-Treasure0969

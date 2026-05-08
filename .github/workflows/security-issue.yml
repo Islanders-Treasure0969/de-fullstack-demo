@@ -1,0 +1,49 @@
+# Auto-create an issue when a CRITICAL Dependabot alert is open.
+# Runs every 6 hours so undetected critical alerts surface fast.
+
+name: security-issue
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  security-events: read
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch open critical Dependabot alerts
+        id: fetch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          gh api "/repos/${{ github.repository }}/dependabot/alerts?state=open&severity=critical" \
+            --jq '[.[] | {number, package: .security_vulnerability.package.name, severity: .security_advisory.severity, summary: .security_advisory.summary, url: .html_url}]' \
+            > critical.json || echo '[]' > critical.json
+          count=$(jq 'length' critical.json)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+      - name: Create or update issue
+        if: steps.fetch.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title="🚨 Critical Dependabot alerts: ${{ steps.fetch.outputs.count }} open"
+          body=$(jq -r 'map("- [\(.package)] \(.summary) — [#\(.number)](\(.url))") | join("\n")' critical.json)
+
+          # Reuse an existing open auto-issue if present
+          existing=$(gh issue list --label "security,auto-generated" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Refreshed at $(date -u +%FT%TZ):\n\n$body"
+          else
+            gh issue create \
+              --title "$title" \
+              --label "security,critical,auto-generated" \
+              --body "$body"
+          fi

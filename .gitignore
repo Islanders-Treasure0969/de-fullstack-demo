@@ -1,0 +1,137 @@
+# ========================================
+# Secrets / env (never commit!)
+# ========================================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+.secrets/
+credentials.json
+.aws/
+.gcp/
+
+# ========================================
+# Python
+# ========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.python-version
+
+# ========================================
+# Node / Next.js
+# ========================================
+node_modules/
+.next/
+.turbo/
+out/
+*.tsbuildinfo
+.npm/
+.yarn/
+.pnpm-store/
+
+# ========================================
+# Go
+# ========================================
+*.exe
+*.test
+*.prof
+vendor/
+go.work
+go.work.sum
+
+# ========================================
+# Rust
+# ========================================
+target/
+Cargo.lock.bak
+**/*.rs.bk
+
+# ========================================
+# Terraform / OpenTofu / Terragrunt
+# ========================================
+.terraform/
+.terraform.lock.hcl
+.terragrunt-cache/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# ========================================
+# dbt
+# ========================================
+target/
+dbt_packages/
+logs/
+profiles.yml
+.user.yml
+manifest.json
+catalog.json
+run_results.json
+
+# ========================================
+# DuckDB / data files
+# ========================================
+*.duckdb
+*.duckdb.wal
+data/
+warehouse/
+*.parquet
+*.csv
+!seeds/**/*.csv
+!sample_data/**/*.csv
+
+# ========================================
+# Docker / Compose
+# ========================================
+docker/data/
+docker/volumes/
+.docker/
+
+# ========================================
+# IDE / OS
+# ========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ========================================
+# Logs
+# ========================================
+*.log
+logs/
+
+# ========================================
+# Build artifacts
+# ========================================
+*.tar.gz
+*.zip
+sbom.json
+sbom.spdx.json
+trivy-results.sarif

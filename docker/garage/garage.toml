@@ -1,0 +1,28 @@
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+
+db_engine = "lmdb"
+
+replication_factor = 1
+consistency_mode = "consistent"
+
+# RPC secret — overridden via env at first boot.
+# Generate with: openssl rand -hex 32
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+rpc_secret = "REPLACE_ME_AT_BOOTSTRAP_via_env"
+
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage.localhost"
+
+[s3_web]
+bind_addr = "[::]:3902"
+root_domain = ".web.garage.localhost"
+index = "index.html"
+
+[admin]
+api_bind_addr = "[::]:3903"
+admin_token = "REPLACE_ME_AT_BOOTSTRAP_via_env"
+metrics_token = "REPLACE_ME_AT_BOOTSTRAP_via_env"

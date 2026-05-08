@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest a new feature or improvement
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this feature solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Target Phase
+      options:
+        - Phase 0 (Security)
+        - Phase 1 (Minimal E2E)
+        - Phase 2 (Iceberg)
+        - Phase 3 (Ingestion modes)
+        - Phase 4 (Fusion + Python models)
+        - Phase 5 (Reverse ETL + web)
+        - Phase 6 (Self-host)
+        - Cross-cutting

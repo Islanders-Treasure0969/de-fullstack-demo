@@ -1,0 +1,14 @@
+# Dependabot is kept ONLY for GitHub-native security updates that Renovate
+# can't handle (e.g., Dependabot Alerts triggers).
+# Day-to-day updates are managed by Renovate (see .github/renovate.json).
+version: 2
+updates:
+  # Keep security updates only — Renovate handles version bumps.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0  # security only
+    labels:
+      - "security"
+      - "github-actions"

@@ -1,0 +1,86 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":timezone(Asia/Tokyo)",
+    "schedule:nonOfficeHours",
+    ":maintainLockFilesWeekly",
+    "group:monorepos"
+  ],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 4,
+  "rebaseWhen": "behind-base-branch",
+  "platformAutomerge": true,
+  "vulnerabilityAlerts": {
+    "labels": ["security", "high-priority"],
+    "automerge": true,
+    "automergeType": "pr",
+    "minimumReleaseAge": "0 days",
+    "schedule": ["at any time"]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true,
+    "schedule": ["before 5am on monday"]
+  },
+  "packageRules": [
+    {
+      "description": "Auto-merge patch and minor updates after CI passes",
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "description": "Major updates require manual review",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["major-update", "needs-review"]
+    },
+    {
+      "description": "Next.js / React: high-priority, no delay",
+      "matchPackageNames": ["next", "react", "react-dom", "@next/**"],
+      "labels": ["nextjs", "frontend", "high-priority"],
+      "minimumReleaseAge": "0 days",
+      "schedule": ["at any time"]
+    },
+    {
+      "description": "Group dev dependencies",
+      "groupName": "all dev dependencies",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor"]
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "groupName": "github actions",
+      "matchManagers": ["github-actions"]
+    },
+    {
+      "description": "Group Terraform / OpenTofu provider updates",
+      "groupName": "terraform providers",
+      "matchManagers": ["terraform"],
+      "matchDepTypes": ["required_provider"]
+    },
+    {
+      "description": "Pin Docker digests for reproducible builds",
+      "matchDatasources": ["docker"],
+      "pinDigests": true
+    }
+  ],
+  "github-actions": {
+    "pinDigests": true
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Detect tool versions pinned in shell scripts",
+      "fileMatch": ["^scripts/.*\\.sh$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+\\w+_VERSION=\"?(?<currentValue>.+?)\"?\\s"
+      ]
+    }
+  ]
+}

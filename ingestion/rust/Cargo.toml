@@ -1,0 +1,16 @@
+[package]
+name = "de-lab-ingestor"
+version = "0.1.0"
+edition = "2021"
+description = "Heavy-batch ingestor for de-fullstack-demo"
+license = "Apache-2.0"
+
+[[bin]]
+name = "ingestor"
+path = "src/main.rs"
+
+[dependencies]
+# Phase 3+ will add:
+# polars = { version = "0.44", features = ["lazy", "parquet"] }
+# tokio = { version = "1", features = ["full"] }
+# reqwest = { version = "0.12", features = ["json"] }

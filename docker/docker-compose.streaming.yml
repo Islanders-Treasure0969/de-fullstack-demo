@@ -1,0 +1,55 @@
+# Phase 3+ — Apache Kafka 4.x in KRaft mode + Apicurio Schema Registry + Kafka UI.
+# Use with: docker compose -f docker-compose.yml -f docker-compose.streaming.yml up -d
+
+services:
+  kafka:
+    image: bitnami/kafka:4.0
+    ports:
+      - "9092:9092"
+    environment:
+      # KRaft mode (no ZooKeeper)
+      KAFKA_CFG_NODE_ID: "0"
+      KAFKA_CFG_PROCESS_ROLES: "controller,broker"
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "0@kafka:9093"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - "kafka-data:/bitnami/kafka"
+    networks: [de-lab]
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  apicurio:
+    image: apicurio/apicurio-registry:3.0.4
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8081:8080"
+    environment:
+      QUARKUS_PROFILE: prod
+      APICURIO_STORAGE_KIND: kafkasql
+      APICURIO_STORAGE_KAFKASQL_BOOTSTRAP_SERVERS: kafka:9092
+    networks: [de-lab]
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: de-lab
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://apicurio:8080/apis/registry/v2
+    networks: [de-lab]
+
+volumes:
+  kafka-data:
