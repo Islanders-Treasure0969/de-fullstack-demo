@@ -137,3 +137,8 @@ logs/
 sbom.json
 sbom.spdx.json
 trivy-results.sarif
+
+# ========================================
+# Personal/runtime workspace (never committed)
+# ========================================
+.local/

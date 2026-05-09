@@ -1,4 +1,4 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 select
     repo_full_name,
@@ -13,4 +13,8 @@ select
     parents,
     cast(fetched_at as timestamp) as fetched_at,
     raw_payload
-from {{ source('bronze', 'commit') }}
+from read_parquet(
+    's3://bronze/commit/**/*.parquet',
+    hive_partitioning = true,
+    union_by_name = true
+)

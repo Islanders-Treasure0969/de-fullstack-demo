@@ -44,6 +44,13 @@ services:
     ports:
       - "3900:3900"  # S3 API
       - "3903:3903"  # admin API
+    environment:
+      # Secrets injected from 1Password via `op run --env-file=.env`.
+      # Garage reads any config field from env when prefixed with GARAGE_.
+      # See: https://garagehq.deuxfleurs.fr/documentation/reference-manual/configuration/
+      GARAGE_RPC_SECRET: "${GARAGE_RPC_SECRET:?GARAGE_RPC_SECRET must be set (use op run --env-file=.env -- ...)}"
+      GARAGE_ADMIN_TOKEN: "${GARAGE_ADMIN_TOKEN:?GARAGE_ADMIN_TOKEN must be set}"
+      GARAGE_METRICS_TOKEN: "${GARAGE_ADMIN_TOKEN:?reuse admin token for metrics}"
     volumes:
       - garage-meta:/var/lib/garage/meta
       - garage-data:/var/lib/garage/data
@@ -59,7 +66,7 @@ services:
   # Lakekeeper — Iceberg REST catalog (Apache 2.0, Rust)
   # ----------------------------------------------------------------
   lakekeeper-db:
-    image: postgres:18-alpine@sha256:54451ecb8ab38c24c3ec123f2fd501303a3a1856a5c66e98cecf2460d5e1e9d7
+    image: postgres:17-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609
     environment:
       POSTGRES_USER: lakekeeper
       POSTGRES_PASSWORD: lakekeeper
@@ -97,7 +104,7 @@ services:
   # Postgres — operational mart (reverse-ETL target, app DB)
   # ----------------------------------------------------------------
   postgres:
-    image: postgres:18-alpine@sha256:54451ecb8ab38c24c3ec123f2fd501303a3a1856a5c66e98cecf2460d5e1e9d7
+    image: postgres:17-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609
     ports:
       - "5432:5432"
     environment:
@@ -117,7 +124,7 @@ services:
   # Temporal — orchestration
   # ----------------------------------------------------------------
   temporal-db:
-    image: postgres:18-alpine@sha256:54451ecb8ab38c24c3ec123f2fd501303a3a1856a5c66e98cecf2460d5e1e9d7
+    image: postgres:17-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609
     environment:
       POSTGRES_USER: temporal
       POSTGRES_PASSWORD: temporal
