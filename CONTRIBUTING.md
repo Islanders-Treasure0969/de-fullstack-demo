@@ -1,6 +1,12 @@
 # Contributing
 
-Thanks for your interest! This is a personal learning project, but contributions and discussions are welcome.
+> **This is a personal learning project and is not currently accepting external contributions.**
+> The repository's `pull_request_creation_policy` is set to `collaborators_only`, so PRs from forks cannot be created. The code is published publicly for transparency and as a portfolio reference — feel free to fork and adapt for your own use.
+>
+> Issues are open for **questions or bug reports**, but not for feature requests at this time.
+> Renovate and Dependabot bots manage dependency updates automatically.
+
+The remainder of this document describes the contribution workflow used by the maintainer.
 
 ## Development setup
 
