@@ -28,6 +28,18 @@ docker compose up -d
 4. CI must pass: `ci`, `codeql`, `trivy`, `gitleaks`.
 5. Renovate PRs auto-merge when CI passes (patch/minor only).
 
+### AI code review (CodeRabbit)
+
+[CodeRabbit](https://www.coderabbit.ai/) reviews every PR in Japanese. Configuration lives in
+[`.coderabbit.yaml`](.coderabbit.yaml). Useful commands inside a PR comment:
+
+- `@coderabbitai review` — request a fresh review
+- `@coderabbitai resolve` — mark all CodeRabbit threads resolved
+- `@coderabbitai full review` — re-run from scratch
+- `@coderabbitai configuration` — print the active config (paste into `.coderabbit.yaml` to update)
+
+Renovate / Dependabot bot PRs are skipped (configured via `ignore_usernames`).
+
 ## Commit messages
 
 Use [Conventional Commits](https://www.conventionalcommits.org/):

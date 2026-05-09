@@ -14,3 +14,4 @@
 | [0006](0006-lifecycle-layered-iac.md) | インフラはライフサイクル別レイヤリング | Accepted |
 | [0007](0007-renovate-for-supply-chain.md) | Renovate を中心とした supply-chain セキュリティ | Accepted |
 | [0008](0008-secrets-via-1password.md) | シークレット管理は 1Password CLI | Accepted |
+| [0009](0009-coderabbit-ai-review.md) | AI コードレビューに CodeRabbit を採用 | Accepted |

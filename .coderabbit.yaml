@@ -1,0 +1,146 @@
+# CodeRabbit configuration — https://docs.coderabbit.ai/reference/configuration
+# Schema: https://coderabbit.ai/integrations/coderabbit-overview/schema.v2.json
+
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: ja-JP                  # Reviews / summaries in Japanese (project convention)
+tone_instructions: "Be concise, technical, and constructive. Cite specific files and line numbers."
+early_access: false              # Stable channel only
+enable_free_tier: true
+
+reviews:
+  profile: assertive             # Catch style + best practices in addition to bugs.
+  request_changes_workflow: false # Use auto-merge gate via required status checks instead
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  auto_title_placeholder: "@coderabbitai"
+  review_status: true
+  poem: false                    # Skip the playful AI poem in summaries
+  collapse_walkthrough: false
+  changed_files_summary: true
+  sequence_diagrams: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: true
+  auto_apply_labels: false       # Reviewer (you) keeps the final word
+  suggested_reviewers: false     # Single-maintainer repo
+  abort_on_close: true
+  disable_cache: false
+
+  # Skip noise on bot PRs and on auto-generated paths.
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    base_branches:
+      - main
+    ignore_title_keywords:
+      - WIP
+      - DO NOT REVIEW
+    labels:
+      - "needs-review"
+    ignore_usernames:
+      - renovate[bot]
+      - dependabot[bot]
+
+  path_filters:
+    # Generated / vendored — don't review.
+    - "!**/*.lock"
+    - "!**/*.min.js"
+    - "!**/*.min.css"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.terraform/**"
+    - "!**/.terragrunt-cache/**"
+    - "!**/target/**"
+    - "!**/node_modules/**"
+    - "!**/__pycache__/**"
+    - "!**/.venv/**"
+    - "!**/dbt_packages/**"
+
+  path_instructions:
+    - path: "ingestion/python/**"
+      instructions: |
+        - Enforce strict typing (mypy strict mode).
+        - Prefer pydantic v2 BaseModel over dataclasses for IO boundaries.
+        - All HTTP calls must go through the existing tenacity-retried client.
+        - Do not log secrets; the project resolves them via 1Password (op://).
+
+    - path: "transform/models/**"
+      instructions: |
+        - Materialization: bronze=view, silver=table, gold=table (see dbt_project.yml).
+        - bronze passthroughs only do casting/renaming.
+        - silver does the joins / dedup; gold is the analyst-facing surface.
+        - Every model needs a description and at least one test in schema.yml.
+
+    - path: ".github/workflows/**"
+      instructions: |
+        - Pin all third-party actions to a commit SHA with a version comment.
+        - Set `permissions:` block to least privilege.
+        - Use `concurrency:` to cancel stale runs.
+
+    - path: "docker/**"
+      instructions: |
+        - Pin Docker images by digest (Renovate auto-updates).
+        - Provide a `healthcheck` for every service.
+        - Never expose database ports without an explanatory comment.
+
+    - path: "infra/**"
+      instructions: |
+        - Use OpenTofu (>= 1.8). Avoid Terraform-only constructs.
+        - Lifecycle layering: 00-foundation → 05-app (lowest to highest churn).
+        - Do not introduce remote state buckets in `dev/`; use the `_bootstrap` layer.
+
+    - path: "docs/adr/**"
+      instructions: |
+        - Use the MADR format (Status / Date / Context / Decision / Consequences).
+        - When superseding an existing ADR, reference its number.
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: false           # Don't auto-write tests — keep the human in the loop.
+
+  tools:
+    # Stick to a curated list to avoid noise from overlapping tools.
+    ruff:
+      enabled: true
+    actionlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    markdownlint:
+      enabled: true
+    gitleaks:
+      enabled: true
+    checkov:
+      enabled: true            # IaC misconfig (Trivy already does this in CI; CodeRabbit catches earlier)
+    sqlfluff:
+      enabled: true
+    hadolint:
+      enabled: false           # No Dockerfiles yet; flip on when added
+    languagetool:
+      enabled: false           # Disable English prose checks since reviews are in Japanese
+    biome:
+      enabled: false           # No JS/TS code yet (Phase 5)
+    eslint:
+      enabled: false
+    pmd:
+      enabled: false
+    rubocop:
+      enabled: false
+    swiftlint:
+      enabled: false
+    detekt:
+      enabled: false
+    phpstan:
+      enabled: false
+    golangci-lint:
+      enabled: true            # Phase 3 will need this
+
+chat:
+  auto_reply: true
