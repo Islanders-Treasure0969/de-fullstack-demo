@@ -52,4 +52,5 @@ resource "github_branch_protection" "main" {
   allows_force_pushes     = false
   enforce_admins          = false # let Renovate bypass via auto-merge
   required_linear_history = true
+  require_signed_commits  = true
 }
