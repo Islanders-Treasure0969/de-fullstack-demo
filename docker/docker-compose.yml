@@ -19,7 +19,7 @@ services:
   # LocalStack — AWS API emulation (S3, Glue, IAM, Secrets, etc.)
   # ----------------------------------------------------------------
   localstack:
-    image: localstack/localstack:4.0@sha256:17c2f79ca4e1f804eb912291a19713d4134806325ef0d21d4c1053161dfa72d0
+    image: localstack/localstack:4.14@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a
     ports:
       - "4566:4566"
     environment:
