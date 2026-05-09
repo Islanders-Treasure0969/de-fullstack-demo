@@ -1,0 +1,64 @@
+[project]
+name = "de-lab-ingestor"
+version = "0.1.0"
+description = "GitHub OSS activity ingestor for de-fullstack-demo"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Kiichi Iwashita" }]
+dependencies = [
+  "httpx>=0.28",
+  "tenacity>=9.0",
+  "pyarrow>=18.0",
+  "boto3>=1.36",
+  "pydantic>=2.10",
+  "pydantic-settings>=2.7",
+  "structlog>=24.4",
+  "typer>=0.15",
+  "python-dateutil>=2.9",
+  "rich>=13.9",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.25",
+  "respx>=0.22",
+  "ruff>=0.8",
+  "mypy>=1.13",
+  "boto3-stubs[s3]>=1.36",
+]
+
+[project.scripts]
+de-lab-ingestor = "de_lab_ingestor.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/de_lab_ingestor"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src"]
+
+[tool.ruff.lint]
+# Conservative-by-default: pyflakes + pycodestyle + isort + pyupgrade + bugbear + comprehensions + simplify.
+# Heavier rule sets (TCH, N, RET, PTH) are opinionated and noisy on a scaffold;
+# reintroduce piecemeal once the codebase stabilises.
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-ra --strict-markers"
