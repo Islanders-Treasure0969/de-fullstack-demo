@@ -69,15 +69,18 @@ env-check: ## Verify env wiring (1Password item or .env.local)
 	fi
 
 # ----------------------------------------------------------------------
-# Docker compose (no secrets needed for compose itself; secrets via .env if any)
+# Docker compose
 # ----------------------------------------------------------------------
+# `compose up` needs GARAGE_RPC_SECRET, GARAGE_ADMIN_TOKEN, POSTGRES_PASSWORD
+# from the env (Garage refuses to start without a 32-byte rpc_secret).
+# We wrap with $(OP_RUN) so 1Password (or .env.local) supplies them.
 .PHONY: compose-up
-compose-up: ## Start the platform stack
-	cd $(REPO_ROOT)/docker && docker compose up -d
+compose-up: env-check ## Start the platform stack
+	cd $(REPO_ROOT)/docker && $(OP_RUN) docker compose up -d
 
 .PHONY: compose-up-streaming
-compose-up-streaming: ## Start the platform stack + Kafka
-	cd $(REPO_ROOT)/docker && docker compose -f docker-compose.yml -f docker-compose.streaming.yml up -d
+compose-up-streaming: env-check ## Start the platform stack + Kafka
+	cd $(REPO_ROOT)/docker && $(OP_RUN) docker compose -f docker-compose.yml -f docker-compose.streaming.yml up -d
 
 .PHONY: compose-down
 compose-down: ## Stop the platform stack
