@@ -99,6 +99,17 @@ dashboard: ## Run the Streamlit dashboard
 	  DUCKDB_PATH=$(DUCKDB_PATH) streamlit run app.py
 
 # ----------------------------------------------------------------------
+# Smoke test (no PAT required)
+# ----------------------------------------------------------------------
+.PHONY: smoke
+smoke: ## Sanity-check compose configs + platform health (no GitHub PAT needed)
+	@bash $(REPO_ROOT)/scripts/smoke-test.sh
+
+.PHONY: smoke-offline
+smoke-offline: ## Smoke test without hitting compose services (CI-safe)
+	@SMOKE_NO_NETWORK=1 bash $(REPO_ROOT)/scripts/smoke-test.sh
+
+# ----------------------------------------------------------------------
 # Quality
 # ----------------------------------------------------------------------
 .PHONY: lint
