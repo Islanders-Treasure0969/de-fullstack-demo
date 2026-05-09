@@ -1,14 +1,5 @@
 {{ config(materialized='table') }}
 
-with deduped as (
-    select
-        *,
-        row_number() over (
-            partition by repo_full_name, sha
-            order by fetched_at desc
-        ) as rn
-    from {{ ref('stg_commit') }}
-)
 select
     repo_full_name,
     sha,
@@ -19,7 +10,8 @@ select
     committer_login,
     committer_email,
     committed_date,
-    cardinality(parents) as parent_count,
+    -- DuckDB v1.5: cardinality() is for MAPs; use len() for LISTs
+    len(parents) as parent_count,
     fetched_at
-from deduped
-where rn = 1
+from {{ ref('stg_commit') }}
+qualify row_number() over (partition by repo_full_name, sha order by fetched_at desc) = 1

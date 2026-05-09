@@ -1,9 +1,13 @@
 version: 2
 
-# External Bronze sources written by ingestion/python/.
-# These are materialized as DuckDB views over Garage S3 parquet partitions.
+# Documentation-only: these sources describe the contract of what the
+# Python ingestor writes to Garage S3. The bronze stg_* models read
+# directly via DuckDB's `read_parquet(...)` since dbt-duckdb's source
+# resolution doesn't auto-handle Hive-partitioned globs.
 #
-# Phase 2 will replace these with Iceberg tables managed by Lakekeeper.
+# Phase 2 will replace these external parquet sources with Iceberg tables
+# managed by Lakekeeper, at which point real `source()` references become
+# usable end-to-end.
 
 sources:
   - name: bronze
@@ -11,45 +15,11 @@ sources:
     meta:
       origin: ingestion/python/
       partitioned_by: [event_type, owner, repo, year, month, day]
+      external_location_template: "s3://bronze/{event_type}/{owner}/{repo}/year={Y}/month={M}/day={D}/*.parquet"
     tables:
       - name: repo_metadata
         description: "Snapshot of repository headline numbers."
-        external:
-          # Replaced at compile-time by env_var or vars.
-          # See profiles.yml.example: extensions=[httpfs, parquet] settings=[s3_*]
-          location: "s3://bronze/repo_metadata/**/*.parquet"
-        columns:
-          - name: full_name
-            description: "owner/repo"
-            tests: [not_null]
-          - name: stargazers_count
-            tests: [not_null]
-          - name: fetched_at
-            tests: [not_null]
-
       - name: issue_or_pr
         description: "Issues and pull requests (PR is a kind of issue on GitHub)."
-        external:
-          location: "s3://bronze/issue_or_pr/**/*.parquet"
-        columns:
-          - name: repo_full_name
-            tests: [not_null]
-          - name: number
-            tests: [not_null]
-          - name: state
-            tests:
-              - not_null
-              - accepted_values:
-                  values: [open, closed]
-          - name: is_pull_request
-            tests: [not_null]
-
       - name: commit
         description: "Commits on the default branch."
-        external:
-          location: "s3://bronze/commit/**/*.parquet"
-        columns:
-          - name: sha
-            tests: [not_null]
-          - name: repo_full_name
-            tests: [not_null]

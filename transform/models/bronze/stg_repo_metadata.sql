@@ -1,7 +1,9 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 -- Bronze passthrough for repository headline numbers.
--- Just type cast and rename for downstream consumption.
+-- Read directly from Garage S3 via DuckDB httpfs + parquet.
+-- (sources.yml documents the contract; dbt-duckdb's source resolution
+-- doesn't auto-handle Hive-partitioned globs, so we read explicitly.)
 select
     full_name as repo_full_name,
     name as repo_name,
@@ -15,7 +17,7 @@ select
     network_count,
     default_branch,
     language,
-    license_spdx,
+    try_cast(license_spdx as varchar) as license_spdx,
     archived,
     disabled,
     fork,
@@ -24,4 +26,8 @@ select
     cast(pushed_at as timestamp) as pushed_at,
     cast(fetched_at as timestamp) as fetched_at,
     raw_payload
-from {{ source('bronze', 'repo_metadata') }}
+from read_parquet(
+    's3://bronze/repo_metadata/**/*.parquet',
+    hive_partitioning = true,
+    union_by_name = true
+)

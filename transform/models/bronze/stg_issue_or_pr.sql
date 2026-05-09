@@ -1,4 +1,4 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 -- Bronze passthrough for issues + PRs (GitHub treats them via the same endpoint).
 -- Splitting happens in silver.
@@ -18,4 +18,8 @@ select
     cast(closed_at as timestamp) as closed_at,
     cast(fetched_at as timestamp) as fetched_at,
     raw_payload
-from {{ source('bronze', 'issue_or_pr') }}
+from read_parquet(
+    's3://bronze/issue_or_pr/**/*.parquet',
+    hive_partitioning = true,
+    union_by_name = true
+)

@@ -1,0 +1,9 @@
+# dbt runtime for the transform/ project.
+# Pinned to dbt-core 1.10 (Phase 4 will switch to dbt Fusion).
+# See ADR-0005 for the migration strategy.
+
+dbt-core>=1.10,<1.11
+dbt-duckdb>=1.10,<1.11
+
+# Data quality (replaces Great Expectations — see ADR / SECURITY.md)
+# soda-core-duckdb>=3.5  # Phase 4 — keep commented for now to keep deps lean

@@ -95,6 +95,13 @@ compose-logs: ## Tail logs
 	cd $(REPO_ROOT)/docker && docker compose logs -f
 
 # ----------------------------------------------------------------------
+# Garage cluster init (one-time per fresh stack)
+# ----------------------------------------------------------------------
+.PHONY: garage-init
+garage-init: env-check ## Assign layout, create bucket, import keys, grant access
+	$(OP_RUN) bash $(REPO_ROOT)/scripts/garage-init.sh
+
+# ----------------------------------------------------------------------
 # Python ingestion
 # ----------------------------------------------------------------------
 .PHONY: ingest-install
@@ -118,19 +125,30 @@ ingest-test: ## Run the ingestor unit tests (no secrets needed)
 	cd $(REPO_ROOT)/ingestion/python && .venv/bin/pytest
 
 # ----------------------------------------------------------------------
-# dbt
+# dbt — uses its own venv at transform/.venv
 # ----------------------------------------------------------------------
+DBT_VENV := $(REPO_ROOT)/transform/.venv
+DBT := $(DBT_VENV)/bin/dbt
+DBT_PROFILES_DIR := $(REPO_ROOT)/transform
+
+.PHONY: dbt-install
+dbt-install: ## Create transform/.venv and install dbt-core + dbt-duckdb
+	$(PY) -m venv $(DBT_VENV)
+	$(DBT_VENV)/bin/pip install -r $(REPO_ROOT)/transform/requirements.txt
+	@test -f $(DBT_PROFILES_DIR)/profiles.yml || cp $(REPO_ROOT)/transform/profiles.yml.example $(DBT_PROFILES_DIR)/profiles.yml
+	@echo "dbt ready: $(DBT)"
+
 .PHONY: dbt-deps
-dbt-deps: ## Install dbt packages
-	cd $(REPO_ROOT)/transform && dbt deps
+dbt-deps: ## Install dbt packages from packages.yml
+	cd $(REPO_ROOT)/transform && DBT_PROFILES_DIR=$(DBT_PROFILES_DIR) $(DBT) deps
 
 .PHONY: dbt-build
 dbt-build: env-check ## Run dbt build end-to-end
-	cd $(REPO_ROOT)/transform && $(OP_RUN) dbt build
+	cd $(REPO_ROOT)/transform && $(OP_RUN) bash -c 'DBT_PROFILES_DIR=$(DBT_PROFILES_DIR) $(DBT) build'
 
 .PHONY: dbt-debug
 dbt-debug: env-check ## Validate dbt connection
-	cd $(REPO_ROOT)/transform && $(OP_RUN) dbt debug
+	cd $(REPO_ROOT)/transform && $(OP_RUN) bash -c 'DBT_PROFILES_DIR=$(DBT_PROFILES_DIR) $(DBT) debug'
 
 # ----------------------------------------------------------------------
 # Streamlit
@@ -160,7 +178,7 @@ precommit: ## Run all pre-commit hooks against everything
 # End-to-end
 # ----------------------------------------------------------------------
 .PHONY: phase1
-phase1: compose-up ingest-bootstrap ingest dbt-deps dbt-build dashboard ## Run the full Phase 1 pipeline
+phase1: compose-up garage-init ingest-install ingest-bootstrap ingest dbt-install dbt-deps dbt-build dashboard ## Run the full Phase 1 pipeline
 
 # ----------------------------------------------------------------------
 # 1Password helpers
