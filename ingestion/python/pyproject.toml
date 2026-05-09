@@ -44,7 +44,10 @@ target-version = "py312"
 src = ["src"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "TCH", "RET", "PTH"]
+# Conservative-by-default: pyflakes + pycodestyle + isort + pyupgrade + bugbear + comprehensions + simplify.
+# Heavier rule sets (TCH, N, RET, PTH) are opinionated and noisy on a scaffold;
+# reintroduce piecemeal once the codebase stabilises.
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
 ignore = ["E501"]  # line length handled by formatter
 
 [tool.ruff.lint.per-file-ignores]

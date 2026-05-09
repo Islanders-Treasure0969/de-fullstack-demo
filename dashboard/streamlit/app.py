@@ -41,9 +41,7 @@ st.title(":bar_chart: OSS Activity Observatory")
 st.caption("Phase 1 dashboard — daily activity across selected OSS repositories.")
 
 if not DB_PATH.exists():
-    st.error(
-        f"DuckDB file not found at `{DB_PATH}`. Run `make ingest && make dbt-build` first."
-    )
+    st.error(f"DuckDB file not found at `{DB_PATH}`. Run `make ingest && make dbt-build` first.")
     st.stop()
 
 # --------------------------------------------------------------
@@ -52,9 +50,7 @@ if not DB_PATH.exists():
 try:
     health = _query("select * from gold.repo_health_snapshot order by stargazers_count desc")
 except duckdb.CatalogException:
-    st.warning(
-        "Gold models not yet materialized. Run `make dbt-build` after the first ingest."
-    )
+    st.warning("Gold models not yet materialized. Run `make dbt-build` after the first ingest.")
     st.stop()
 
 st.subheader("Repository health snapshot")
