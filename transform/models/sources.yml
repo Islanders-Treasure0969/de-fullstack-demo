@@ -1,0 +1,55 @@
+version: 2
+
+# External Bronze sources written by ingestion/python/.
+# These are materialized as DuckDB views over Garage S3 parquet partitions.
+#
+# Phase 2 will replace these with Iceberg tables managed by Lakekeeper.
+
+sources:
+  - name: bronze
+    description: "Raw GitHub event payloads, partitioned Hive-style on Garage S3."
+    meta:
+      origin: ingestion/python/
+      partitioned_by: [event_type, owner, repo, year, month, day]
+    tables:
+      - name: repo_metadata
+        description: "Snapshot of repository headline numbers."
+        external:
+          # Replaced at compile-time by env_var or vars.
+          # See profiles.yml.example: extensions=[httpfs, parquet] settings=[s3_*]
+          location: "s3://bronze/repo_metadata/**/*.parquet"
+        columns:
+          - name: full_name
+            description: "owner/repo"
+            tests: [not_null]
+          - name: stargazers_count
+            tests: [not_null]
+          - name: fetched_at
+            tests: [not_null]
+
+      - name: issue_or_pr
+        description: "Issues and pull requests (PR is a kind of issue on GitHub)."
+        external:
+          location: "s3://bronze/issue_or_pr/**/*.parquet"
+        columns:
+          - name: repo_full_name
+            tests: [not_null]
+          - name: number
+            tests: [not_null]
+          - name: state
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [open, closed]
+          - name: is_pull_request
+            tests: [not_null]
+
+      - name: commit
+        description: "Commits on the default branch."
+        external:
+          location: "s3://bronze/commit/**/*.parquet"
+        columns:
+          - name: sha
+            tests: [not_null]
+          - name: repo_full_name
+            tests: [not_null]
