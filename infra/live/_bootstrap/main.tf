@@ -26,24 +26,30 @@ variable "github_repo" {
   default     = "de-fullstack-demo"
 }
 
-# NOTE: Uncomment once the repository exists on GitHub.
-# resource "github_branch_protection" "main" {
-#   repository_id = var.github_repo
-#   pattern       = "main"
-#
-#   required_status_checks {
-#     strict   = true
-#     contexts = ["ci", "codeql", "trivy", "gitleaks"]
-#   }
-#
-#   required_pull_request_reviews {
-#     required_approving_review_count = 1
-#     require_code_owner_reviews      = true
-#     dismiss_stale_reviews           = true
-#   }
-#
-#   allows_deletions        = false
-#   allows_force_pushes     = false
-#   enforce_admins          = false # let Renovate bypass via auto-merge
-#   required_linear_history = true
-# }
+resource "github_branch_protection" "main" {
+  repository_id = var.github_repo
+  pattern       = "main"
+
+  required_status_checks {
+    strict = true
+    # Each workflow exposes a single aggregator job named `gate` so the
+    # status-check contract here stays stable when individual jobs change.
+    contexts = [
+      "ci / gate",
+      "codeql / gate",
+      "trivy / gate",
+      "gitleaks / gate",
+    ]
+  }
+
+  required_pull_request_reviews {
+    required_approving_review_count = 1
+    require_code_owner_reviews      = true
+    dismiss_stale_reviews           = true
+  }
+
+  allows_deletions        = false
+  allows_force_pushes     = false
+  enforce_admins          = false # let Renovate bypass via auto-merge
+  required_linear_history = true
+}

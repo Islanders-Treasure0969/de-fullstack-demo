@@ -136,8 +136,7 @@ jobs:
         working-directory: docker
         run: docker compose config --quiet
 
-  ci-success:
-    name: ci
+  gate:
     needs: [changes, python, go, rust, web, tofu, dbt, compose]
     if: always()
     runs-on: ubuntu-latest
