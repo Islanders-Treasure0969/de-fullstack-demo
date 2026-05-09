@@ -74,7 +74,7 @@ services:
       retries: 10
 
   lakekeeper:
-    image: quay.io/lakekeeper/catalog:v0.7.0@sha256:a719e54ee0b295c37ba5f11facfde42ec2b1c8099e4a19e60dc9988a07b7d938
+    image: quay.io/lakekeeper/catalog:v0.12.1@sha256:7f6be079a9bc80e4223a5faf58738e248edfbf4244096e7e05447980af74cabb
     depends_on:
       lakekeeper-db:
         condition: service_healthy
