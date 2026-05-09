@@ -153,10 +153,10 @@ docker run -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN gcr.io/openssf/scorecard:stable \
 | Scorecard Check | 実装状況 | 該当ファイル / 補足 |
 |---|---|---|
 | Binary-Artifacts | ✅ | バイナリ無し、`.gitignore` で `target/`, `dist/` 等除外 |
-| Branch-Protection | ⚠️ | `infra/live/_bootstrap/main.tf:30-49` にコード有・**コメントアウト中**（最重要ギャップ） |
+| Branch-Protection | ✅ | `infra/live/_bootstrap/main.tf` で有効化。required checks: `ci / gate`, `codeql / gate`, `trivy / gate`, `gitleaks / gate` + signed commits + linear history。`tofu apply` は手動 |
 | CI-Tests | ✅ | `.github/workflows/ci.yml`、PR で changes フィルタ→各言語 lint |
 | CII-Best-Practices | ❌ | バッジ未取得、Phase 4 で検討 |
-| Code-Review | ⚠️ | CODEOWNERS あり、ただし branch protection 未適用なので強制力なし |
+| Code-Review | ✅ | CODEOWNERS 必須レビュー + branch protection で強制 |
 | Contributors | N/A | 個人プロジェクト想定 |
 | Dangerous-Workflow | ⚠️ | `.github/workflows/auto-merge.yml` が `pull_request_target` 使用、actor 制限あり |
 | Dependency-Update-Tool | ✅ | Renovate + Dependabot 二段 |
@@ -174,7 +174,7 @@ docker run -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN gcr.io/openssf/scorecard:stable \
 
 | OWASP CI/CD Top 10 | 実装状況 | 補足 |
 |---|---|---|
-| CICD-SEC-1 Flow Control | ⚠️ | branch protection 未適用 |
+| CICD-SEC-1 Flow Control | ✅ | branch protection + required reviews/checks を適用済み |
 | CICD-SEC-2 IAM | N/A | 1 名運営、SSO/MFA は GitHub 設定（要確認） |
 | CICD-SEC-3 Dependency Chain | ✅ | digest pin + Trivy |
 | CICD-SEC-4 PPE | ⚠️ | `pull_request_target` 使用箇所あり |

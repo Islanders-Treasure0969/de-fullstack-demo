@@ -65,7 +65,7 @@
 
 ## E. 推奨アーキテクチャ
 
-```
+```text
 secure-repo-toolkit/                 # 独立リポ（公式マーケットプレースに submit 想定）
   .claude-plugin/
     plugin.json                       # name, version, description, author

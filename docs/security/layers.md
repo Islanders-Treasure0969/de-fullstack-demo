@@ -78,7 +78,7 @@
 | OWASP CI/CD | CICD-SEC-1 |
 | SSDF | PW.7.1 |
 
-**自リポ実装**：⚠️ `infra/live/_bootstrap/main.tf` にコード有・**コメントアウト中**（最重要ギャップ）。
+**自リポ実装**：✅ `infra/live/_bootstrap/main.tf` で有効化済み。required checks（`ci / gate`, `codeql / gate`, `trivy / gate`, `gitleaks / gate`）+ CODEOWNERS レビュー必須 + `require_signed_commits = true` + 強制 linear history。`tofu apply` は手動運用（`infra/live/_bootstrap/README.md` 参照）。
 
 **スキル自動化観点**：audit で GitHub API 経由に branch protection 設定を取得→ `terraform/github_branch_protection` 推奨設定との diff を出す。scaffold は IaC ファイルを生成。
 
