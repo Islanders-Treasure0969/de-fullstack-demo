@@ -1,44 +1,83 @@
 #!/usr/bin/env bash
 # Bootstrap the local platform stack from a fresh clone.
 # Idempotent — safe to re-run.
+#
+# Secret strategy:
+#   1. If `op` CLI is on PATH and the user is signed in, use 1Password.
+#   2. Else fall back to .env.local (created from .env.example).
+#
+# See ADR-0008 for the rationale.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-# 1. Copy .env.example to .env if missing
-if [ ! -f .env ]; then
-  cp .env.example .env
-  echo "Created .env from template — fill in secrets, then re-run."
-  exit 0
-fi
+color() { printf "\033[%sm%s\033[0m" "$1" "$2"; }
+info() { echo "$(color 36 "[bootstrap]") $*"; }
+warn() { echo "$(color 33 "[bootstrap]") $*" >&2; }
+err()  { echo "$(color 31 "[bootstrap]") $*" >&2; }
 
-# 2. Generate Garage secrets if not yet set
-if grep -q '^GARAGE_RPC_SECRET=$' .env; then
-  rpc_secret="$(openssl rand -hex 32)"
-  admin_token="$(openssl rand -hex 32)"
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s|^GARAGE_RPC_SECRET=$|GARAGE_RPC_SECRET=${rpc_secret}|" .env
-    sed -i '' "s|^GARAGE_ADMIN_TOKEN=$|GARAGE_ADMIN_TOKEN=${admin_token}|" .env
+# ----------------------------------------------------------------------
+# 1. Choose secret backend
+# ----------------------------------------------------------------------
+secret_backend=""
+if command -v op > /dev/null; then
+  if op account list > /dev/null 2>&1; then
+    secret_backend="1password"
+    info "Detected 1Password CLI — using 'op run --env-file=.env'."
   else
-    sed -i "s|^GARAGE_RPC_SECRET=$|GARAGE_RPC_SECRET=${rpc_secret}|" .env
-    sed -i "s|^GARAGE_ADMIN_TOKEN=$|GARAGE_ADMIN_TOKEN=${admin_token}|" .env
+    warn "op CLI installed but not signed in. Run: op signin"
+    warn "Falling back to .env.local."
   fi
-  echo "Generated Garage secrets in .env"
 fi
 
-# 3. Install pre-commit hooks
+if [ -z "$secret_backend" ]; then
+  secret_backend="dotenv-local"
+  if [ ! -f .env.local ]; then
+    cp .env.example .env.local
+    info "Created .env.local from .env.example — fill in real values."
+  else
+    info "Using existing .env.local"
+  fi
+fi
+
+# ----------------------------------------------------------------------
+# 2. 1Password item check
+# ----------------------------------------------------------------------
+if [ "$secret_backend" = "1password" ]; then
+  if ! op item get de-fullstack-demo --vault Personal --format json > /dev/null 2>&1; then
+    warn "1Password item 'de-fullstack-demo' not found."
+    warn "Run: make op-create"
+  else
+    info "1Password item 'de-fullstack-demo' detected."
+  fi
+fi
+
+# ----------------------------------------------------------------------
+# 3. pre-commit hooks
+# ----------------------------------------------------------------------
 if command -v pre-commit > /dev/null; then
-  pre-commit install
+  pre-commit install --quiet
+  info "pre-commit hooks installed."
 else
-  echo "WARN: pre-commit not installed. pip install pre-commit && pre-commit install"
+  warn "pre-commit not installed. pip install pre-commit"
 fi
 
+# ----------------------------------------------------------------------
 # 4. Bring up the platform
-cd docker
-docker compose up -d
+# ----------------------------------------------------------------------
+info "Starting docker compose..."
+(cd docker && docker compose up -d)
 
-echo ""
-echo "Platform booting. Check health: docker compose ps"
-echo "Tail logs:                   docker compose logs -f"
+cat <<EOF
+
+$(color 32 "[bootstrap] Done.")
+
+  secret backend : $secret_backend
+  next steps     :
+    - make compose-ps   # check services healthy
+    - make ingest-test  # run unit tests
+    - make phase1       # full E2E pipeline (after secrets are set)
+
+EOF
