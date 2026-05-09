@@ -132,7 +132,7 @@ services:
       retries: 10
 
   temporal:
-    image: temporalio/auto-setup:1.25@sha256:b1edc1e20002d958c8182f2ae08dee877a125083683a627a44917683419ba6a8
+    image: temporalio/auto-setup:1.29@sha256:1263120feed69d82e4ca23b8ca6f1d702c3029fe70714e382966d0192318eab6
     depends_on:
       temporal-db:
         condition: service_healthy
