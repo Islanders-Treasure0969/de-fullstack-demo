@@ -152,7 +152,7 @@ services:
       retries: 10
 
   temporal-ui:
-    image: temporalio/ui:2.31.2@sha256:28bb3ea5a6ea3e09f16b521f32ab727c96470f7f1e420c66a6cbfb02001a8aa2
+    image: temporalio/ui:2.49.1@sha256:a066bdf5c4de689cabaf80cc357871f1db5e6d750a6bcfc42e877b913e31ef24
     depends_on:
       temporal:
         condition: service_started
