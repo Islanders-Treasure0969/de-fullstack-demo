@@ -102,6 +102,17 @@ garage-init: env-check ## Assign layout, create bucket, import keys, grant acces
 	$(OP_RUN) bash $(REPO_ROOT)/scripts/garage-init.sh
 
 # ----------------------------------------------------------------------
+# Lakekeeper bootstrap + warehouse creation (Phase 2)
+# ----------------------------------------------------------------------
+.PHONY: lakekeeper-init
+lakekeeper-init: env-check ## Bootstrap Lakekeeper and create the de_lab warehouse
+	$(OP_RUN) bash $(REPO_ROOT)/scripts/lakekeeper-init.sh
+
+.PHONY: iceberg-poc
+iceberg-poc: env-check ## End-to-end Iceberg PoC (PyIceberg write + DuckDB read)
+	$(OP_RUN) $(DBT_VENV)/bin/python $(REPO_ROOT)/scripts/iceberg-poc.py
+
+# ----------------------------------------------------------------------
 # Python ingestion
 # ----------------------------------------------------------------------
 .PHONY: ingest-install

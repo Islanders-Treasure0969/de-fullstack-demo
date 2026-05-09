@@ -23,7 +23,7 @@ CONTAINER="${GARAGE_CONTAINER:-de-lab-garage-1}"
 ZONE="${GARAGE_ZONE:-dc1}"
 CAPACITY="${GARAGE_CAPACITY:-10G}"
 TAG="${GARAGE_TAG:-local}"
-BUCKET="${GARAGE_BUCKET:-bronze}"
+BUCKETS=(${GARAGE_BUCKETS:-bronze iceberg-warehouse})
 KEY_NAME="${GARAGE_KEY_NAME:-de-lab}"
 
 color() { printf "\033[%sm%s\033[0m" "$1" "$2"; }
@@ -71,19 +71,23 @@ else
 fi
 
 # ----------------------------------------------------------------------
-# 2. Bucket (idempotent)
+# 2. Buckets (idempotent) — bronze (parquet) + iceberg-warehouse (Phase 2)
 # ----------------------------------------------------------------------
-if g bucket list 2>/dev/null | awk 'NR>2 {print $1}' | grep -qx "$BUCKET"; then
-  info "Bucket '$BUCKET' already exists — skipping."
-else
-  info "Creating bucket '$BUCKET'..."
-  g bucket create "$BUCKET"
-fi
+for BUCKET in "${BUCKETS[@]}"; do
+  # Output: `ID  Created  Global aliases  Local aliases` then rows.
+  # Bucket name is the third column (Global aliases).
+  if g bucket list 2>/dev/null | awk 'NR>1 {for (i=3;i<=NF;i++) print $i}' | grep -qx "$BUCKET"; then
+    info "Bucket '$BUCKET' already exists — skipping."
+  else
+    info "Creating bucket '$BUCKET'..."
+    g bucket create "$BUCKET"
+  fi
+done
 
 # ----------------------------------------------------------------------
 # 3. Key import (idempotent)
 # ----------------------------------------------------------------------
-if g key list 2>/dev/null | awk 'NR>2 {print $2}' | grep -qx "$KEY_NAME"; then
+if g key list 2>/dev/null | awk 'NR>1 {print $3}' | grep -qx "$KEY_NAME"; then
   info "Key '$KEY_NAME' already exists — skipping import."
 else
   info "Importing access keys (id from env, name=$KEY_NAME)..."
@@ -91,19 +95,23 @@ else
 fi
 
 # ----------------------------------------------------------------------
-# 4. Grant the key access to the bucket (idempotent: garage allow is OK to re-run)
+# 4. Grant the key access to all buckets (idempotent)
 # ----------------------------------------------------------------------
-info "Granting read+write on '$BUCKET' to key '$KEY_NAME'..."
-g bucket allow --read --write --owner "$BUCKET" --key "$KEY_NAME"
+for BUCKET in "${BUCKETS[@]}"; do
+  info "Granting read+write on '$BUCKET' to key '$KEY_NAME'..."
+  g bucket allow --read --write --owner "$BUCKET" --key "$KEY_NAME"
+done
 
 # ----------------------------------------------------------------------
 # 5. Verify
 # ----------------------------------------------------------------------
 info "Verification:"
-g bucket info "$BUCKET" 2>&1 | sed 's/^/  /'
+for BUCKET in "${BUCKETS[@]}"; do
+  g bucket info "$BUCKET" 2>&1 | sed "s/^/  [$BUCKET] /" | tail -8
+done
 
 echo ""
 echo "$(color 32 "[garage-init] Done.")"
-echo "  Bucket  : $BUCKET"
+echo "  Buckets : ${BUCKETS[*]}"
 echo "  Key name: $KEY_NAME"
 echo "  S3 endpoint (host): http://localhost:3900"
