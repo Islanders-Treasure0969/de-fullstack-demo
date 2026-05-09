@@ -1,0 +1,81 @@
+version: 2
+
+models:
+  # ----- Bronze -----
+  - name: stg_repo_metadata
+    description: "Bronze passthrough for repo headline numbers."
+    columns:
+      - name: repo_full_name
+        tests: [not_null]
+      - name: stargazers_count
+        tests: [not_null]
+      - name: fetched_at
+        tests: [not_null]
+
+  - name: stg_issue_or_pr
+    description: "Bronze passthrough for issues + PRs."
+    columns:
+      - name: repo_full_name
+        tests: [not_null]
+      - name: number
+        tests: [not_null]
+      - name: state
+        tests:
+          - not_null
+          - accepted_values:
+              values: [open, closed]
+
+  - name: stg_commit
+    description: "Bronze passthrough for commits."
+    columns:
+      - name: sha
+        tests: [not_null]
+
+  # ----- Silver -----
+  - name: dim_repos
+    description: "Latest snapshot per repo."
+    columns:
+      - name: repo_full_name
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_issues
+    description: "Issues only (PRs filtered out)."
+    columns:
+      - name: repo_full_name
+        tests: [not_null]
+      - name: issue_number
+        tests: [not_null]
+
+  - name: fct_pull_requests
+    description: "Pull requests only."
+    columns:
+      - name: pr_number
+        tests: [not_null]
+
+  - name: fct_commits
+    description: "Commits."
+    columns:
+      - name: sha
+        tests: [not_null]
+
+  # ----- Gold -----
+  - name: repo_daily_metrics
+    description: "One row per (repo, day) with counts. Consumed by Streamlit."
+    columns:
+      - name: repo_full_name
+        tests: [not_null]
+      - name: day
+        tests: [not_null]
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [repo_full_name, day]
+
+  - name: repo_health_snapshot
+    description: "One row per repo with current health vitals."
+    columns:
+      - name: repo_full_name
+        tests:
+          - unique
+          - not_null

@@ -1,0 +1,6 @@
+# Streamlit dashboard runtime deps. Mirrors pyproject.toml dependencies for
+# environments that prefer pip directly.
+streamlit>=1.40
+duckdb>=1.5
+pandas>=2.2
+altair>=5.4
