@@ -1,7 +1,9 @@
 # ========================================
-# Secrets / env (never commit!)
+# Secrets / env
 # ========================================
-.env
+# .env IS committed — it contains only `op://` references resolved by
+# `op run` at runtime. See ADR-0008 and docs/getting-started.md.
+# Personal overrides (when not using 1Password) go in .env.local.
 .env.local
 .env.*.local
 *.pem

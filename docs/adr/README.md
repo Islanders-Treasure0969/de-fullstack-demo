@@ -13,3 +13,4 @@
 | [0005](0005-fusion-migration-strategy.md) | dbt-core で開始、Phase 4 で Fusion 移行 | Accepted |
 | [0006](0006-lifecycle-layered-iac.md) | インフラはライフサイクル別レイヤリング | Accepted |
 | [0007](0007-renovate-for-supply-chain.md) | Renovate を中心とした supply-chain セキュリティ | Accepted |
+| [0008](0008-secrets-via-1password.md) | シークレット管理は 1Password CLI | Accepted |

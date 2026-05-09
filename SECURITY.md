@@ -48,8 +48,10 @@ Auto-merge requires all status checks (CI / CodeQL / Trivy) to pass.
 
 ## Secrets Hygiene
 
-- `.env` files are git-ignored — only `.env.example` is committed.
+- **Secrets are managed via 1Password CLI** (`op run --env-file=.env`); see ADR-0008.
+- `.env` is committed but contains only `op://` references — no plaintext secrets.
+- `.env.local` is gitignored and used by users not on 1Password.
 - LocalStack uses dummy AWS credentials (`AKIAIOSFODNN7EXAMPLE`).
 - pre-commit hooks block accidental secret commits via gitleaks.
-- GitHub Secret Scanning is enabled at the org/repo level.
-- **Never** commit real cloud credentials to this repo.
+- GitHub Secret Scanning + Push Protection are enabled at the repo level.
+- **Never** commit real cloud credentials, real PATs, or `.env.local` to this repo.
