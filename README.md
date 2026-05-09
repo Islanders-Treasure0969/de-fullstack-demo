@@ -110,8 +110,11 @@ Recommended local toolchain:
 ## Security
 
 - See [SECURITY.md](SECURITY.md) for vulnerability reporting.
+- Secrets via 1Password CLI (`op run --env-file=.env`); see [ADR-0008](docs/adr/0008-secrets-via-1password.md).
 - Renovate auto-merges patch/minor + critical security updates.
 - CodeQL / Trivy / gitleaks / Scorecard run on every PR and on schedule.
+- [CodeRabbit](https://www.coderabbit.ai/) provides AI code review on every PR
+  (config: [`.coderabbit.yaml`](.coderabbit.yaml), ADR: [0009](docs/adr/0009-coderabbit-ai-review.md)).
 
 ## License
 
