@@ -16,6 +16,8 @@ dependencies = [
   "typer>=0.15",
   "python-dateutil>=2.9",
   "rich>=13.9",
+  # Phase 2B: PyIceberg writer for the Bronze layer.
+  "pyiceberg[s3fs,pyarrow]>=0.10,<0.12",
 ]
 
 [project.optional-dependencies]

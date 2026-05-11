@@ -44,10 +44,18 @@ class Settings(BaseSettings):
     garage_s3_region: str = Field(default="garage")
     bronze_bucket: str = Field(default="bronze")
 
+    # ---------------- Iceberg / Lakekeeper (Phase 2B) ----------------
+    lakekeeper_catalog_url: str = Field(default="http://localhost:8181/catalog")
+    lakekeeper_warehouse: str = Field(default="de_lab")
+    iceberg_namespace: str = Field(default="bronze")
+
     # ---------------- Runtime ----------------
     log_level: str = Field(default="INFO")
     request_timeout_seconds: float = Field(default=30.0)
     max_retries: int = Field(default=5)
+    # `parquet` (Phase 1) — direct S3 parquet writes
+    # `iceberg` (Phase 2B+) — PyIceberg via Lakekeeper REST catalog
+    bronze_backend: str = Field(default="iceberg")
 
     @property
     def target_repos(self) -> list[str]:
