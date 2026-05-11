@@ -15,6 +15,30 @@ clean-targets:
   - target
   - dbt_packages
 
+# Phase 2B: ATTACH the Lakekeeper Iceberg catalog at run start so bronze
+# stg_* can read tables via `lakekeeper.bronze.<event_type>`.
+#
+# Note: on-run-end intentionally omitted. DuckDB's DETACH does not support
+# the `IF EXISTS` clause (parser error), and the ATTACH lives only inside
+# the dbt connection — once dbt exits, the catalog handle is gone anyway,
+# so explicit cleanup buys us nothing.
+on-run-start:
+  - "INSTALL iceberg; LOAD iceberg;"
+  - "INSTALL httpfs; LOAD httpfs;"
+  - >
+    SET s3_endpoint='{{ env_var('LAKEKEEPER_S3_HOST_ENDPOINT', '192.168.0.27:3900') }}';
+    SET s3_region='{{ env_var('GARAGE_S3_REGION', 'garage') }}';
+    SET s3_access_key_id='{{ env_var('GARAGE_S3_ACCESS_KEY') }}';
+    SET s3_secret_access_key='{{ env_var('GARAGE_S3_SECRET_KEY') }}';
+    SET s3_use_ssl=false;
+    SET s3_url_style='path';
+  - >
+    ATTACH IF NOT EXISTS '{{ env_var('LAKEKEEPER_WAREHOUSE', 'de_lab') }}' AS lakekeeper (
+      TYPE ICEBERG,
+      ENDPOINT '{{ env_var('LAKEKEEPER_CATALOG_URL', 'http://localhost:8181/catalog') }}',
+      AUTHORIZATION_TYPE 'none'
+    );
+
 models:
   de_lab:
     bronze:

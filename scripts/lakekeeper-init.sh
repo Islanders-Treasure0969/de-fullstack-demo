@@ -79,15 +79,59 @@ else
 fi
 
 # ----------------------------------------------------------------------
-# 2. Warehouse (idempotent — list + check)
+# 2. Warehouse (idempotent — list + check; self-heals stale endpoint)
 # ----------------------------------------------------------------------
-existing=$(curl -sf "$LK_HOST/management/v1/warehouse" \
-  -H "x-project-id: $DEFAULT_PROJECT_ID" 2>/dev/null \
-  | jq -r --arg name "$WAREHOUSE" '.warehouses[] | select(.name == $name) | .id' \
-  || true)
+existing_json=$(curl -sf "$LK_HOST/management/v1/warehouse" \
+  -H "x-project-id: $DEFAULT_PROJECT_ID" 2>/dev/null || echo '{"warehouses":[]}')
+existing=$(echo "$existing_json" | jq -r --arg name "$WAREHOUSE" \
+  '.warehouses[] | select(.name == $name) | .id')
+existing_endpoint=$(echo "$existing_json" | jq -r --arg name "$WAREHOUSE" \
+  '.warehouses[] | select(.name == $name) | ."storage-profile".endpoint')
 
 if [ -n "$existing" ]; then
-  info "Warehouse '$WAREHOUSE' already exists (id: $existing) — skipping creation."
+  # Compare without trailing slash; Lakekeeper may store one.
+  # This self-heals after the dev laptop moves Wi-Fi networks and the
+  # host LAN IP changes (Phase 2A learning #2).
+  want="${LK_INTERNAL_S3%/}"
+  have="${existing_endpoint%/}"
+  if [ "$want" != "$have" ]; then
+    info "Warehouse exists but endpoint drift detected:"
+    info "  have: $have"
+    info "  want: $want"
+    info "Updating storage profile in place..."
+    body=$(jq -n \
+      --arg bucket "$WAREHOUSE_BUCKET" \
+      --arg prefix "$WAREHOUSE_KEY_PREFIX" \
+      --arg endpoint "$LK_INTERNAL_S3" \
+      --arg ak "$GARAGE_S3_ACCESS_KEY" \
+      --arg sk "$GARAGE_S3_SECRET_KEY" \
+      '{
+        "storage-profile": {
+          "type": "s3",
+          "bucket": $bucket,
+          "key-prefix": $prefix,
+          "endpoint": $endpoint,
+          "region": "garage",
+          "path-style-access": true,
+          "flavor": "s3-compat",
+          "sts-enabled": false,
+          "remote-signing-enabled": false
+        },
+        "storage-credential": {
+          "type": "s3",
+          "credential-type": "access-key",
+          "aws-access-key-id": $ak,
+          "aws-secret-access-key": $sk
+        }
+      }')
+    curl -sSf -X POST "$LK_HOST/management/v1/warehouse/$existing/storage" \
+      -H 'Content-Type: application/json' \
+      -H "x-project-id: $DEFAULT_PROJECT_ID" \
+      --data "$body" > /dev/null
+    info "Storage profile updated."
+  else
+    info "Warehouse '$WAREHOUSE' already exists with matching endpoint (id: $existing)."
+  fi
 else
   info "Creating warehouse '$WAREHOUSE' on bucket '$WAREHOUSE_BUCKET'..."
   body=$(jq -n \
@@ -108,7 +152,8 @@ else
         "region": "garage",
         "path-style-access": true,
         "flavor": "s3-compat",
-        "sts-enabled": false
+        "sts-enabled": false,
+        "remote-signing-enabled": false
       },
       "storage-credential": {
         "type": "s3",
