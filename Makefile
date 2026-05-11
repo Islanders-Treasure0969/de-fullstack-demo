@@ -69,15 +69,18 @@ env-check: ## Verify env wiring (1Password item or .env.local)
 	fi
 
 # ----------------------------------------------------------------------
-# Docker compose (no secrets needed for compose itself; secrets via .env if any)
+# Docker compose
 # ----------------------------------------------------------------------
+# `compose up` needs GARAGE_RPC_SECRET, GARAGE_ADMIN_TOKEN, POSTGRES_PASSWORD
+# from the env (Garage refuses to start without a 32-byte rpc_secret).
+# We wrap with $(OP_RUN) so 1Password (or .env.local) supplies them.
 .PHONY: compose-up
-compose-up: ## Start the platform stack
-	cd $(REPO_ROOT)/docker && docker compose up -d
+compose-up: env-check ## Start the platform stack
+	cd $(REPO_ROOT)/docker && $(OP_RUN) docker compose up -d
 
 .PHONY: compose-up-streaming
-compose-up-streaming: ## Start the platform stack + Kafka
-	cd $(REPO_ROOT)/docker && docker compose -f docker-compose.yml -f docker-compose.streaming.yml up -d
+compose-up-streaming: env-check ## Start the platform stack + Kafka
+	cd $(REPO_ROOT)/docker && $(OP_RUN) docker compose -f docker-compose.yml -f docker-compose.streaming.yml up -d
 
 .PHONY: compose-down
 compose-down: ## Stop the platform stack
@@ -90,6 +93,24 @@ compose-ps: ## Show running containers
 .PHONY: compose-logs
 compose-logs: ## Tail logs
 	cd $(REPO_ROOT)/docker && docker compose logs -f
+
+# ----------------------------------------------------------------------
+# Garage cluster init (one-time per fresh stack)
+# ----------------------------------------------------------------------
+.PHONY: garage-init
+garage-init: env-check ## Assign layout, create bucket, import keys, grant access
+	$(OP_RUN) bash $(REPO_ROOT)/scripts/garage-init.sh
+
+# ----------------------------------------------------------------------
+# Lakekeeper bootstrap + warehouse creation (Phase 2)
+# ----------------------------------------------------------------------
+.PHONY: lakekeeper-init
+lakekeeper-init: env-check ## Bootstrap Lakekeeper and create the de_lab warehouse
+	$(OP_RUN) bash $(REPO_ROOT)/scripts/lakekeeper-init.sh
+
+.PHONY: iceberg-poc
+iceberg-poc: env-check ## End-to-end Iceberg PoC (PyIceberg write + DuckDB read)
+	$(OP_RUN) $(DBT_VENV)/bin/python $(REPO_ROOT)/scripts/iceberg-poc.py
 
 # ----------------------------------------------------------------------
 # Python ingestion
@@ -115,19 +136,30 @@ ingest-test: ## Run the ingestor unit tests (no secrets needed)
 	cd $(REPO_ROOT)/ingestion/python && .venv/bin/pytest
 
 # ----------------------------------------------------------------------
-# dbt
+# dbt — uses its own venv at transform/.venv
 # ----------------------------------------------------------------------
+DBT_VENV := $(REPO_ROOT)/transform/.venv
+DBT := $(DBT_VENV)/bin/dbt
+DBT_PROFILES_DIR := $(REPO_ROOT)/transform
+
+.PHONY: dbt-install
+dbt-install: ## Create transform/.venv and install dbt-core + dbt-duckdb
+	$(PY) -m venv $(DBT_VENV)
+	$(DBT_VENV)/bin/pip install -r $(REPO_ROOT)/transform/requirements.txt
+	@test -f $(DBT_PROFILES_DIR)/profiles.yml || cp $(REPO_ROOT)/transform/profiles.yml.example $(DBT_PROFILES_DIR)/profiles.yml
+	@echo "dbt ready: $(DBT)"
+
 .PHONY: dbt-deps
-dbt-deps: ## Install dbt packages
-	cd $(REPO_ROOT)/transform && dbt deps
+dbt-deps: ## Install dbt packages from packages.yml
+	cd $(REPO_ROOT)/transform && DBT_PROFILES_DIR=$(DBT_PROFILES_DIR) $(DBT) deps
 
 .PHONY: dbt-build
 dbt-build: env-check ## Run dbt build end-to-end
-	cd $(REPO_ROOT)/transform && $(OP_RUN) dbt build
+	cd $(REPO_ROOT)/transform && $(OP_RUN) bash -c 'DBT_PROFILES_DIR=$(DBT_PROFILES_DIR) $(DBT) build'
 
 .PHONY: dbt-debug
 dbt-debug: env-check ## Validate dbt connection
-	cd $(REPO_ROOT)/transform && $(OP_RUN) dbt debug
+	cd $(REPO_ROOT)/transform && $(OP_RUN) bash -c 'DBT_PROFILES_DIR=$(DBT_PROFILES_DIR) $(DBT) debug'
 
 # ----------------------------------------------------------------------
 # Streamlit
@@ -157,7 +189,7 @@ precommit: ## Run all pre-commit hooks against everything
 # End-to-end
 # ----------------------------------------------------------------------
 .PHONY: phase1
-phase1: compose-up ingest-bootstrap ingest dbt-deps dbt-build dashboard ## Run the full Phase 1 pipeline
+phase1: compose-up garage-init ingest-install ingest-bootstrap ingest dbt-install dbt-deps dbt-build dashboard ## Run the full Phase 1 pipeline
 
 # ----------------------------------------------------------------------
 # 1Password helpers

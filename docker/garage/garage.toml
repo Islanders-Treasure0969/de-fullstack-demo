@@ -6,11 +6,12 @@ db_engine = "lmdb"
 replication_factor = 1
 consistency_mode = "consistent"
 
-# RPC secret — overridden via env at first boot.
-# Generate with: openssl rand -hex 32
+# Secrets (rpc_secret, admin_token, metrics_token) are injected via
+# environment variables — see docker-compose.yml `garage.environment`
+# block. The values come from 1Password (`op run --env-file=.env`).
+# Reference: https://garagehq.deuxfleurs.fr/documentation/reference-manual/configuration/
 rpc_bind_addr = "[::]:3901"
 rpc_public_addr = "127.0.0.1:3901"
-rpc_secret = "REPLACE_ME_AT_BOOTSTRAP_via_env"
 
 [s3_api]
 s3_region = "garage"
@@ -24,5 +25,3 @@ index = "index.html"
 
 [admin]
 api_bind_addr = "[::]:3903"
-admin_token = "REPLACE_ME_AT_BOOTSTRAP_via_env"
-metrics_token = "REPLACE_ME_AT_BOOTSTRAP_via_env"

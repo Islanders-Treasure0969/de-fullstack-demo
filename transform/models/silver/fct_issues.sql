@@ -1,16 +1,7 @@
 {{ config(materialized='table') }}
 
 -- Issues only. PRs are split off into fct_pull_requests.
-with deduped as (
-    select
-        *,
-        row_number() over (
-            partition by repo_full_name, number
-            order by fetched_at desc
-        ) as rn
-    from {{ ref('stg_issue_or_pr') }}
-    where is_pull_request = false
-)
+-- Use `qualify` to avoid DuckDB's `select * + row_number()` binder bug.
 select
     repo_full_name,
     number as issue_number,
@@ -25,5 +16,6 @@ select
     updated_at,
     closed_at,
     fetched_at
-from deduped
-where rn = 1
+from {{ ref('stg_issue_or_pr') }}
+where is_pull_request = false
+qualify row_number() over (partition by repo_full_name, number order by fetched_at desc) = 1

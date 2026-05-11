@@ -18,7 +18,11 @@ clean-targets:
 models:
   de_lab:
     bronze:
-      +materialized: view
+      # Materialize bronze as table (not view) to dodge DuckDB v1.5 binder
+      # bug: view → silver `qualify` with multiple TIMESTAMP columns triggers
+      # "INTERNAL Error: TIMESTAMP != VARCHAR". Persisted bronze has stable
+      # column types and avoids the inline-view binder path.
+      +materialized: table
       +schema: bronze
     silver:
       +materialized: table
