@@ -26,7 +26,7 @@ services:
       retries: 10
 
   apicurio:
-    image: apicurio/apicurio-registry:3.2.4@sha256:04d57bcf5cdd0aaa0ca2f7b2a25070ff48076e7344bb3b1931d193dc0034eec7
+    image: apicurio/apicurio-registry:3.2.5@sha256:c6df851f3f9f2f7b4b3d8dc779ec9b20cb98782c0ca327a7e1a5fdb5ba7e02ea
     depends_on:
       kafka:
         condition: service_healthy
