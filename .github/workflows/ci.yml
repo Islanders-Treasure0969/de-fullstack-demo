@@ -136,14 +136,21 @@ jobs:
         working-directory: docker
         run: docker compose config --quiet
 
-  ci-success:
-    name: ci
+  gate:
     needs: [changes, python, go, rust, web, tofu, dbt, compose]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Verify all jobs passed
         run: |
+          # `changes` is the path-filter that decides which downstream jobs
+          # run. If it fails or is cancelled, every dependent job is silently
+          # skipped — without this check, the gate would pass on a broken
+          # change-detection step.
+          if [ "${{ needs.changes.result }}" != "success" ]; then
+            echo "changes result: ${{ needs.changes.result }} — failing"
+            exit 1
+          fi
           for r in '${{ needs.python.result }}' '${{ needs.go.result }}' '${{ needs.rust.result }}' '${{ needs.web.result }}' '${{ needs.tofu.result }}' '${{ needs.dbt.result }}' '${{ needs.compose.result }}'; do
             if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
               echo "Job result: $r — failing"

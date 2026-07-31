@@ -20,6 +20,15 @@ tofu plan
 tofu apply
 ```
 
+## Operational notes
+
+- `require_signed_commits = true` is enabled on `main`. **Do not switch the
+  repo's merge strategy to "Rebase and merge"** — rebase replays each PR
+  commit individually, so any unsigned commit in a PR will be rejected.
+  Use "Squash and merge" or "Create a merge commit" so GitHub's web-flow
+  key signs the resulting commit on the server side. Renovate and
+  GitHub-API-driven flows are already signed and unaffected.
+
 ## Phase 0
 
 This directory is a **placeholder** for now. Actual resource definitions land in Phase 1.
