@@ -34,7 +34,7 @@ jobs:
           exit-code: "0"  # report only; gate is a separate job
       - name: Upload SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@c4dd10e44af883a891fe31ced449bcb4a6728b9b # v3
+        uses: github/codeql-action/upload-sarif@f3712979fa5f215279b101dd0a2e3bdfb4353324 # v3
         with:
           sarif_file: trivy-fs.sarif
           category: trivy-fs
@@ -55,7 +55,7 @@ jobs:
           exit-code: "0"
       - name: Upload SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@c4dd10e44af883a891fe31ced449bcb4a6728b9b # v3
+        uses: github/codeql-action/upload-sarif@f3712979fa5f215279b101dd0a2e3bdfb4353324 # v3
         with:
           sarif_file: trivy-config.sarif
           category: trivy-config
