@@ -59,7 +59,7 @@ services:
   # Lakekeeper — Iceberg REST catalog (Apache 2.0, Rust)
   # ----------------------------------------------------------------
   lakekeeper-db:
-    image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+    image: postgres:18-alpine@sha256:a1d02e4bd40c94d3bf2bdd3678c137388e76d9efcd23c285e9429d336a834b44
     environment:
       POSTGRES_USER: lakekeeper
       POSTGRES_PASSWORD: lakekeeper
@@ -97,7 +97,7 @@ services:
   # Postgres — operational mart (reverse-ETL target, app DB)
   # ----------------------------------------------------------------
   postgres:
-    image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+    image: postgres:18-alpine@sha256:a1d02e4bd40c94d3bf2bdd3678c137388e76d9efcd23c285e9429d336a834b44
     ports:
       - "5432:5432"
     environment:
@@ -117,7 +117,7 @@ services:
   # Temporal — orchestration
   # ----------------------------------------------------------------
   temporal-db:
-    image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+    image: postgres:18-alpine@sha256:a1d02e4bd40c94d3bf2bdd3678c137388e76d9efcd23c285e9429d336a834b44
     environment:
       POSTGRES_USER: temporal
       POSTGRES_PASSWORD: temporal
