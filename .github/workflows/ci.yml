@@ -106,7 +106,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: opentofu/setup-opentofu@9d84900f3238fab8cd84ce47d658d25dd008be2f # v1
         with:
-          tofu_version: "1.8.5"
+          tofu_version: "v1.12.6"
       - name: tofu fmt check
         run: tofu fmt -check -recursive infra/
 
