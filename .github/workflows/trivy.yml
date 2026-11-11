@@ -61,7 +61,6 @@ jobs:
           category: trivy-config
 
   gate:
-    name: Gate on critical findings
     needs: [fs-scan, config-scan]
     runs-on: ubuntu-latest
     steps:

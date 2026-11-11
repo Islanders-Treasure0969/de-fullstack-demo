@@ -37,3 +37,15 @@ jobs:
       - uses: github/codeql-action/analyze@4bfa242aa49c5f7c6770b98670d354a7dfac05f8 # v3
         with:
           category: "/language:${{ matrix.language }}"
+
+  gate:
+    needs: analyze
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify analyze matrix passed
+        run: |
+          if [ "${{ needs.analyze.result }}" != "success" ]; then
+            echo "analyze result: ${{ needs.analyze.result }} — failing"
+            exit 1
+          fi
